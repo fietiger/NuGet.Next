@@ -9,7 +9,7 @@ WORKDIR /src
 COPY web .
 RUN npm install -g yarn
 RUN yarn
-RUN yarn run build
+RUN yarn vite build --verbose
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
