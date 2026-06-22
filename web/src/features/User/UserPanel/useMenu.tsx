@@ -5,7 +5,6 @@ import {
   LifeBuoy,
   LogOut,
   Mail,
-  ChartCandlestick,
   AppWindow,
   KeySquare,
   Download,
@@ -143,17 +142,6 @@ export const useMenu = () => {
   ];
 
   const settings: MenuProps['items'] = [
-    {
-      icon: <Icon icon={ChartCandlestick} />,
-      key: 'common-history',
-      label: '操作记录',
-      onClick: () => {
-        router.push('/common-history');
-      },
-    },
-    {
-      type: 'divider',
-    },
     {
       icon: <Icon icon={Key} />,
       key: 'change-password',

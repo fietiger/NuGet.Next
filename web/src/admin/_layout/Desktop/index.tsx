@@ -8,17 +8,29 @@ import { Package, User, Gauge, ChartCandlestick, Settings } from 'lucide-react'
 import { useNavigate, useLocation } from "react-router-dom";
 import React from "react";
 import Avatar from "./Avatar";
+import { useUserStore } from "@/store/user";
 const { Content, Footer, Sider } = Layout;
 
 const DesktopLayout = memo(() => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isSignedIn, user] = useUserStore((s) => [s.isSignedIn, s.user]);
 
     const [selectedKey, setSelectedKey] = React.useState(location.pathname);
 
     const {
         token: { colorBgContainer, borderRadiusLG },
     } = theme.useToken();
+
+    React.useEffect(() => {
+        if (!isSignedIn || user?.role !== 'admin') {
+            navigate("/", { replace: true });
+        }
+    }, [isSignedIn, navigate, user?.role]);
+
+    if (!isSignedIn || user?.role !== 'admin') {
+        return null;
+    }
 
     return (<Layout className="admin-layout" style={{
         height: '100vh',

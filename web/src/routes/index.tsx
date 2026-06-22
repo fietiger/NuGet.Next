@@ -5,7 +5,6 @@ import PackageDetails from "@/app/packages/details";
 import { createBrowserRouter, RouteObject } from "react-router-dom";
 import LoginPage from "@/app/login";
 import Upload from "@/app/upload";
-import CommonHistory from "@/app/common-history";
 import AdminLayout from "@/admin/layout";
 import AdminWelcome from "@/admin/welcome";
 import UserManagement from "@/admin/user-management";
@@ -42,10 +41,6 @@ const routes = [
             {
                 element: <Upload />,
                 path: "/upload",
-            },
-            {
-                element: <CommonHistory />,
-                path: "/common-history",
             },
             {
                 element: <KeyManager />,

@@ -142,11 +142,6 @@ public static class ApiExtensions
                 await apis.AuthenticateAsync(input))
             .WithOpenApi();
 
-        group.MapGet("api/v3/package-update-record",
-                async ([FromServices] PackageUpdateRecordApis apis, int page, int pageSize) =>
-                await apis.GetCurrentAsync(page, pageSize))
-            .WithOpenApi();
-
         group.MapGet("api/v3/package-update-record/by-user",
                 async ([FromServices] PackageUpdateRecordApis apis, string[] userId, int page, int pageSize) =>
                 await apis.GetByUserIdAsync(userId, page, pageSize))
