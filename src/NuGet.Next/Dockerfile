@@ -4,12 +4,13 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM node AS lobe
+FROM node:24-bookworm-slim AS lobe
 WORKDIR /src
+RUN npm install -g pnpm@10.33.3
+COPY web/package.json web/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY web .
-RUN npm install -g yarn
-RUN yarn
-RUN yarn vite build
+RUN pnpm build
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
