@@ -4,11 +4,11 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM node as lobe
+FROM node AS lobe
 WORKDIR /src
 COPY web .
+RUN npm install -g yarn
 RUN yarn
-RUN npm i
 RUN yarn run build
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
