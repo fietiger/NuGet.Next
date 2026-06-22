@@ -70,7 +70,7 @@ const DesktopLayout = memo(() => {
                     {
                         key: 'common-history',
                         icon: <ChartCandlestick />,
-                        label: '提交记录',
+                        label: '操作记录',
                     },
                     {
                         key: 'settings',

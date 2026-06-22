@@ -4,14 +4,16 @@ using Microsoft.EntityFrameworkCore.Dm.Extensions;
 using NuGet.Next.Core;
 using NuGet.Next.Core.Exceptions;
 using NuGet.Next.Core.Infrastructure;
+using NuGet.Next.Extensions;
 using NuGet.Next.Protocol.Models;
 using NuGet.Versioning;
 
 namespace NuGet.Next.Service;
 
 public class PackageApis(
+    IAuthenticationService authentication,
     IPackageContentService packageContent,
-    IContext context,
+    IContext dbContext,
     IUserContext userContext,
     IPackageDatabase
         packageDatabase)
@@ -32,6 +34,11 @@ public class PackageApis(
 
     public async Task DownloadPackageAsync(HttpContext context, string id, string version)
     {
+        if (!await authentication.AuthenticateAsync(context))
+        {
+            throw new UnauthorizedAccessException();
+        }
+
         if (!NuGetVersion.TryParse(version, out var nugetVersion))
         {
             throw new NotFoundException("包不存在");
@@ -43,6 +50,8 @@ public class PackageApis(
         {
             throw new NotFoundException("包不存在");
         }
+
+        await AddDownloadRecordAsync(context, id, nugetVersion);
 
         context.Response.ContentType = "application/octet-stream";
 
@@ -115,7 +124,7 @@ public class PackageApis(
         page = Math.Max(page, 1);
         pageSize = Math.Min(pageSize, 1000);
 
-        var query = context.Packages.Where(x =>
+        var query = dbContext.Packages.Where(x =>
             string.IsNullOrEmpty(keyword) || x.Id.Contains(keyword) ||
             (!string.IsNullOrEmpty(x.Title) && x.Title.Contains(keyword)));
 
@@ -150,5 +159,44 @@ public class PackageApis(
         await packageDatabase.HardDeletePackageAsync(id, NuGetVersion.Parse(version), false, new CancellationToken());
 
         return OkResponse.Ok("删除成功");
+    }
+
+    private async Task AddDownloadRecordAsync(HttpContext context, string id, NuGetVersion version)
+    {
+        await dbContext.PackageUpdateRecords.AddAsync(new PackageUpdateRecord
+        {
+            PackageId = id,
+            Version = version.ToNormalizedString(),
+            OperationTime = DateTime.Now,
+            UserId = userContext.UserId,
+            OperationType = "下载包",
+            OperationIP = userContext.IpAddress,
+            OperationDescription = await GetDownloadTokenDescriptionAsync(context)
+        }, context.RequestAborted);
+
+        await dbContext.SaveChangesAsync(context.RequestAborted);
+    }
+
+    private async Task<string> GetDownloadTokenDescriptionAsync(HttpContext context)
+    {
+        var apiKey = context.GetApiKey();
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return string.Empty;
+        }
+
+        if (!apiKey.StartsWith("key-"))
+        {
+            return "Token类型：登录Token";
+        }
+
+        var keyId = await dbContext.UserKeys
+            .Where(x => x.Key == apiKey)
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync(context.RequestAborted);
+
+        return string.IsNullOrWhiteSpace(keyId)
+            ? "Token类型：UserKey"
+            : $"Token类型：UserKey，KeyId：{keyId}";
     }
 }

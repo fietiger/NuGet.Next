@@ -9,6 +9,36 @@ export const DownloadPackage = (id: string) => {
     return get(`/v3/package/${id}/index.json`)
 }
 
+export const DownloadPackageFile = async (url: string, fileName: string) => {
+    const token = localStorage.getItem('token');
+    const response = await window.fetch(url, {
+        headers: {
+            "X-NuGet-ApiKey": `${token ?? ''}`
+        }
+    });
+
+    if (response.status === 401) {
+        window.location.href = '/login';
+        return;
+    }
+
+    if (!response.ok) {
+        throw new Error(await response.text());
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
+    try {
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = fileName;
+        a.click();
+    } finally {
+        setTimeout(() => URL.revokeObjectURL(objectUrl));
+    }
+}
+
 export const PackageInfo = (id: string, version?: string | null) => {
     if (version) {
         return get(`/v3/package-info/${id}/${version}`)

@@ -28,6 +28,10 @@ export const CommonHistory = () => {
             dataIndex: 'operationType',
             key: 'operationType',
         }, {
+            title: '描述',
+            dataIndex: 'operationDescription',
+            key: 'operationDescription',
+        }, {
             title: 'IP',
             dataIndex: 'operationIP',
             key: 'operationIP',
@@ -79,7 +83,7 @@ export const CommonHistory = () => {
                 padding: 16,
             }}>
                 <span>
-                    提交记录
+                    操作记录
                 </span>
                 <span style={{
                     marginLeft: 'auto',

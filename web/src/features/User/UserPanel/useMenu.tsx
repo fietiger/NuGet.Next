@@ -34,8 +34,14 @@ export const useMenu = () => {
     const content = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
-    <add key="NuGet Next" value="{source}/v3/index.json" />
+    <add key="NuGetNext" value="{source}/v3/index.json" />
   </packageSources>
+  <packageSourceCredentials>
+    <NuGetNext>
+      <add key="Username" value="token" />
+      <add key="ClearTextPassword" value="{user-key}" />
+    </NuGetNext>
+  </packageSourceCredentials>
 </configuration>
 `
     const blob = new Blob([content.replace('{source}', window.location.origin)], {
@@ -46,7 +52,7 @@ export const useMenu = () => {
     a.href = url;
     a.download = 'NuGet.config';
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url));
 
   }
 
@@ -94,7 +100,7 @@ export const useMenu = () => {
     {
       icon: <Icon icon={ChartCandlestick} />,
       key: 'common-history',
-      label: '提交记录',
+      label: '操作记录',
       onClick: () => {
         router.push('/common-history');
       },

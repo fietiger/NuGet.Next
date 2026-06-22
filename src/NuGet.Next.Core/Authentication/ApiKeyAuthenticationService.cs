@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.EntityFrameworkCore;
 using NuGet.Next.Extensions;
 using Thor.Service.Infrastructure.Helper;
 
@@ -13,38 +13,54 @@ public class ApiKeyAuthenticationService(IContext context, JwtHelper jwtHelper)
     {
         var apiKey = httpContext.GetApiKey();
 
-        if (apiKey == null)
+        if (string.IsNullOrWhiteSpace(apiKey))
             return false;
 
-        if (apiKey.StartsWith("key-"))
+        try
         {
-            var result = await (from key in context.UserKeys
-                join user in context.Users
-                    on key.UserId equals user.Id into userGroup
-                from user in userGroup.DefaultIfEmpty()
-                where key.Key == apiKey && key.Enabled
-                select user).FirstOrDefaultAsync();
+            if (apiKey.StartsWith("key-"))
+            {
+                var result = await (from key in context.UserKeys
+                    join user in context.Users
+                        on key.UserId equals user.Id into userGroup
+                    from user in userGroup.DefaultIfEmpty()
+                    where key.Key == apiKey && key.Enabled
+                    select user).FirstOrDefaultAsync();
 
-            if (result == null)
-                return false;
-            
-            // 将用户信息设置到上下文中
-            httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(jwtHelper.GetClaimsFromToken(result)));
-            
-            return true;
-        }
-        else
-        {
-            var (id, role, fullName) = jwtHelper.GetUserFromToken(apiKey);
+                if (result == null)
+                    return false;
+
+                SetUser(httpContext, result);
+
+                return true;
+            }
+
+            var (id, _, _) = jwtHelper.GetUserFromToken(apiKey);
 
             if (id == null)
                 return false;
 
             // 判断用户是否存在
             var query = await context.Users.FirstOrDefaultAsync(u => u.Id == id);
+            if (query == null)
+            {
+                return false;
+            }
 
-            return query != null;
+            SetUser(httpContext, query);
+
+            return true;
         }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void SetUser(HttpContext httpContext, User user)
+    {
+        // 将用户信息设置到上下文中
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(jwtHelper.GetClaimsFromToken(user)));
     }
 
     public async Task<AuthenticationResponse> AuthenticateAsync(AuthenticateInput input)

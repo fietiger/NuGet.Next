@@ -67,7 +67,7 @@ NuGet 最新版开源私有化包管理，我们基于BaGet的基础之上增加
 version: '3.8'
 services:
   nuget.next:
-    image: aidotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -95,7 +95,7 @@ docker-compose up -d
 version: '3.8'
 services:
   nuget.next:
-    image: aidotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -123,7 +123,7 @@ docker-compose up -d
 version: '3.8'
 services:
   nuget.next:
-    image: aidotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -152,7 +152,7 @@ docker-compose up -d
 version: '3.8'
 services:
   nuget.next:
-    image: aidotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -180,7 +180,7 @@ docker-compose up -d
 version: '3.8'
 services:
   nuget.next:
-    image: aidotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -206,6 +206,23 @@ docker-compose up -d
 
 - 默认用户名：admin
 - 默认密码：Aa123456.
+- 下载 `.nupkg` 需要提供 token。用户可在“Key管理”中创建 Key，浏览器下载会自动携带登录 token；NuGet 客户端可使用 Basic 凭证，把用户名设置为任意非空值、密码设置为用户 Key：
+
+```shell
+dotnet nuget add source http://localhost:5000/v3/index.json --name NuGetNext --username token --password <user-key> --store-password-in-clear-text
+```
+
+- 管理员可在后台“操作记录”中查看下载审计，包括包、版本、用户、IP 和 token 类型。
+
+## 发布到自己的 Docker Hub
+
+GitHub Actions 会读取仓库变量 `DOCKER_IMAGE` 作为镜像名，例如 `your-dockerhub-name/nuget-next`。在 fork 仓库的 `Settings -> Secrets and variables -> Actions` 中配置：
+
+- Variables: `DOCKER_IMAGE=your-dockerhub-name/nuget-next`
+- Secrets: `DOCKERHUB_USERNAME=your-dockerhub-name`
+- Secrets: `DOCKERHUB_TOKEN=<Docker Hub Access Token>`
+
+推送到 `main` 后会发布两个标签：`latest` 和当前提交 SHA。
 
 
 ## 联系我们
@@ -215,4 +232,3 @@ docker-compose up -d
 - [Gitee](https://gitee.com/aidotnet)
 - [邮箱](mailto:239573049qq.com)
 - [QQ群](https://qm.qq.com/q/1mmVx7zMjC)
-

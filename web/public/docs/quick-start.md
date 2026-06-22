@@ -5,7 +5,7 @@
 version: '3.8'
 services:
   nuget.next:
-    image: registry.token-ai.cn/ai-dotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -27,13 +27,23 @@ services:
 docker-compose up -d
 ```
 
+### 下载 token
+
+下载 `.nupkg` 需要提供 token。用户可在“Key管理”中创建 Key，NuGet 客户端可使用 Basic 凭证，把用户名设置为任意非空值、密码设置为用户 Key：
+
+```shell
+dotnet nuget add source http://localhost:5000/v3/index.json --name NuGetNext --username token --password <user-key> --store-password-in-clear-text
+```
+
+管理员可在后台“操作记录”中查看下载审计，包括包、版本、用户、IP 和 token 类型。
+
 ### 国产化支持
 
 ```yaml
 version: '3.8'
 services:
   nuget.next:
-    image: registry.token-ai.cn/ai-dotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -61,7 +71,7 @@ docker-compose up -d
 version: '3.8'
 services:
   nuget.next:
-    image: registry.token-ai.cn/ai-dotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -90,7 +100,7 @@ docker-compose up -d
 version: '3.8'
 services:
   nuget.next:
-    image: registry.token-ai.cn/ai-dotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile
@@ -118,7 +128,7 @@ docker-compose up -d
 version: '3.8'
 services:
   nuget.next:
-    image: registry.token-ai.cn/ai-dotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile

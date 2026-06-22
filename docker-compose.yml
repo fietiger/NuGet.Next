@@ -1,6 +1,6 @@
 ﻿services:
   nuget.next:
-    image: aidotnet/nuget-next
+    image: ${DOCKER_IMAGE:-nuget-next}
     build:
       context: .
       dockerfile: src/NuGet.Next/Dockerfile

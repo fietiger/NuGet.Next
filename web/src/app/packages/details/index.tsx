@@ -1,8 +1,9 @@
-import { PackageInfo } from "@/services/PackageService";
+import { DownloadPackageFile, PackageInfo } from "@/services/PackageService";
 import { PackageDetailsState } from "@/types/package";
 import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import { useParams } from "react-router-dom";
-import { Spin, Result, Row, Col, Card, Tabs } from "antd";
+import { Spin, Result, Row, Col, Card, Tabs, message } from "antd";
 import { DownloadOutlined, HistoryOutlined, GlobalOutlined, GithubOutlined, FileTextOutlined, CloudDownloadOutlined, GiftOutlined } from '@ant-design/icons';
 import { Image, Markdown, Snippet, Tag } from "@lobehub/ui";
 import { Flexbox } from 'react-layout-kit';
@@ -32,6 +33,35 @@ const PackageDetails = () => {
         setLoading(true);
         loadingData();
     }, [id, version]);
+
+    const getPackageDownloadUrl = () => {
+        if (!detail) {
+            return '#';
+        }
+
+        return detail.packageDownloadUrl ?? location.origin + '/v3/package/' +
+            detail.package.id + '/' +
+            detail.package.normalizedVersionString + '/' +
+            `${detail.package.id}.${detail.package.normalizedVersionString}.nupkg`;
+    };
+
+    const handlePackageDownload = async (event: MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+
+        if (!detail) {
+            return;
+        }
+
+        try {
+            await DownloadPackageFile(
+                getPackageDownloadUrl(),
+                `${detail.package.id}.${detail.package.normalizedVersionString}.nupkg`
+            );
+        } catch (error) {
+            console.error(error);
+            message.error('下载失败，请确认已登录或 token 可用');
+        }
+    };
 
     if (loading) {
         return <>
@@ -297,22 +327,8 @@ const PackageDetails = () => {
                         )}
                         <li>
                             <CloudDownloadOutlined /> <a
-                                href={detail.packageDownloadUrl ?? location.origin + '/v3/package/' +
-                                    detail.package.id + '/' +
-                                    detail.package.normalizedVersionString + '/' +
-                                    `${detail.package.id}.${detail.package.normalizedVersionString}.nupkg`}
-                                onClick={() => {
-                                    const url = detail.packageDownloadUrl ?? location.origin + '/v3/package/' +
-                                        detail.package.id + '/' +
-                                        detail.package.normalizedVersionString + '/' +
-                                        `${detail.package.id}.${detail.package.normalizedVersionString}.nupkg`;
-
-                                    const a = document.createElement('a');
-                                    a.href = url;
-                                    a.download = `${detail.package.id}.${detail.package.normalizedVersionString}.nupkg`;
-                                    a.click();
-
-                                }}>下载</a>
+                                href={getPackageDownloadUrl()}
+                                onClick={handlePackageDownload}>下载</a>
                         </li>
                     </ul>
                 </Card>
