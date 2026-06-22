@@ -1,23 +1,24 @@
-import { optionalDevtools } from 'zustand-utils';
 import { devtools as _devtools } from 'zustand/middleware';
 
+type Devtools = typeof _devtools;
+type DevtoolsOptions = Parameters<Devtools>[1];
 
 export const createDevtools =
-  (name: string): typeof _devtools =>
-  (initializer) => {
-    let showDevtools = false;
+  (name: string): Devtools =>
+  ((initializer: Parameters<Devtools>[0], options?: DevtoolsOptions) => {
+    let enabled = false;
 
-    // check url to show devtools
     if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      const debug = url.searchParams.get('debug');
-      if (debug?.includes(name)) {
-        showDevtools = true;
-      }
+      const debug = new URL(window.location.href).searchParams.get('debug');
+      enabled = debug?.includes(name) === true;
     }
 
-    // @ts-ignore
-    return optionalDevtools(showDevtools)(initializer, {
+    if (!enabled) {
+      return initializer;
+    }
+
+    return _devtools(initializer, {
+      ...options,
       name: `NuGetNext_${name}`,
     });
-  };
+  }) as Devtools;

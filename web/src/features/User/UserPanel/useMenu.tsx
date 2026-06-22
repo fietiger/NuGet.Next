@@ -12,12 +12,19 @@ import {
   Key
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { message } from 'antd';
 import type { MenuProps } from '@/components/Menu';
 import { DOCUMENTS, EMAIL_SUPPORT, GITHUB_ISSUES, mailTo } from '@/const/url';
 import { useQueryRoute } from '@/hooks/useQueryRoute';
 import { useUserStore } from '@/store/user';
 import { authSelectors } from '@/store/user/selectors';
 import { useLocation } from 'react-router-dom';
+import { CreateUserKey, UserKeyList } from '@/services/UserKeyService';
+
+type UserKeyItem = {
+  key: string;
+  enabled: boolean;
+};
 
 export const useMenu = () => {
   const router = useQueryRoute();
@@ -29,7 +36,44 @@ export const useMenu = () => {
   ]);
   const location = useLocation();
 
-  function downloadNugetConfig() {
+  async function getEnabledUserKey() {
+    const keys = await UserKeyList() as UserKeyItem[];
+    const enabledKey = keys.find((item) => item.enabled)?.key;
+
+    if (enabledKey) {
+      return enabledKey;
+    }
+
+    const result = await CreateUserKey();
+    if (!result.success) {
+      message.error(result.message ?? '创建 Key 失败');
+      return null;
+    }
+
+    const refreshedKeys = await UserKeyList() as UserKeyItem[];
+    return refreshedKeys.find((item) => item.enabled)?.key ?? null;
+  }
+
+  async function downloadNugetConfig() {
+    if (!isLogin) {
+      message.warning('请先登录后下载 NuGet.config');
+      router.push('/login');
+      return;
+    }
+
+    let userKey: string | null;
+    try {
+      userKey = await getEnabledUserKey();
+    } catch (error) {
+      console.error(error);
+      message.error('获取 Key 失败');
+      return;
+    }
+
+    if (!userKey) {
+      message.error('没有可用的 Key，请先在密钥管理中启用或创建 Key');
+      return;
+    }
 
     const content = `<?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -44,9 +88,11 @@ export const useMenu = () => {
   </packageSourceCredentials>
 </configuration>
 `
-    const blob = new Blob([content.replace('{source}', window.location.origin)], {
-      type: 'text/plain',
-    });
+    const config = content
+      .replace('{source}', window.location.origin)
+      .replace('{user-key}', userKey);
+
+    const blob = new Blob([config], { type: 'application/xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -164,14 +210,14 @@ export const useMenu = () => {
     {
       type: 'divider',
     },
-    {
+    ...(isLogin ? [{
       icon: <Icon icon={Download} />,
       key: 'download-nuget-config',
       label: <span>下载 NuGet.config</span>,
       onClick: () => {
-        downloadNugetConfig();
+        void downloadNugetConfig();
       }
-    },
+    }] : []),
     ...(isLogin ? adminItems : []),
     ...(isLogin ? settings : []),
     ...helps,

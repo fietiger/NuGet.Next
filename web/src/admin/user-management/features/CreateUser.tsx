@@ -26,7 +26,7 @@ const CreateUser = (props: CreateUserProps) => {
     }
 
     return (
-        <Modal footer={[]} open={props.open} onClose={props.onClose} onCancel={props.onClose}>
+        <Modal footer={[]} open={props.open} onCancel={props.onClose}>
             <Form onFinish={handleSubmit}>
                 <Form.Item label="头像" initialValue={'https://avatars.githubusercontent.com/u/61819790?v=4'} name="avatar" >
                     <EmojiPicker
