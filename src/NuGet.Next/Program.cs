@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.Features;
 using NuGet.Next;
 using NuGet.Next.Converters;
 using NuGet.Next.Extensions;
+using NuGet.Next.Options;
 using NuGet.Next.Service;
 
 Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
@@ -14,6 +15,9 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
     Args = args,
     ContentRootPath = Directory.GetCurrentDirectory(),
 });
+
+var localSettingsFile = new LocalSettingsFile(LocalSettingsFile.ResolvePath(builder.Configuration));
+builder.Configuration.AddJsonFile(localSettingsFile.FilePath, optional: true, reloadOnChange: true);
 
 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
 {
@@ -38,6 +42,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
 
+builder.Services.AddSingleton(localSettingsFile);
 builder.Services.AddNuGetNext(builder.Configuration);
 builder.Services.AddResponseCompression();
 builder.Services.AddEndpointsApiExplorer();

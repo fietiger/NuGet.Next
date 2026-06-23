@@ -5,6 +5,7 @@ using NuGet.Next.Core;
 using NuGet.Next.Core.Exceptions;
 using NuGet.Next.Core.Infrastructure;
 using NuGet.Next.Extensions;
+using NuGet.Next.Options;
 using NuGet.Next.Protocol.Models;
 using NuGet.Versioning;
 
@@ -14,6 +15,7 @@ public class PackageApis(
     IAuthenticationService authentication,
     IPackageContentService packageContent,
     IContext dbContext,
+    NuGetNextOptions options,
     IUserContext userContext,
     IPackageDatabase
         packageDatabase)
@@ -34,7 +36,8 @@ public class PackageApis(
 
     public async Task DownloadPackageAsync(HttpContext context, string id, string version)
     {
-        if (!await authentication.AuthenticateAsync(context))
+        var isAuthenticated = await authentication.AuthenticateAsync(context);
+        if (!isAuthenticated && !options.PublicAccess)
         {
             throw new UnauthorizedAccessException();
         }
@@ -51,7 +54,10 @@ public class PackageApis(
             throw new NotFoundException("包不存在");
         }
 
-        await AddDownloadRecordAsync(context, id, nugetVersion);
+        if (isAuthenticated)
+        {
+            await AddDownloadRecordAsync(context, id, nugetVersion);
+        }
 
         context.Response.ContentType = "application/octet-stream";
 

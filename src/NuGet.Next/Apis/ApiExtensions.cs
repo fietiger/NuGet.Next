@@ -199,6 +199,18 @@ public static class ApiExtensions
                 await apis.GetAsync())
             .WithOpenApi();
 
+        var settings = group.MapGroup("api/v3/settings");
+
+        settings.MapGet(string.Empty,
+                ([FromServices] SettingsApis apis) =>
+                apis.GetAsync())
+            .WithOpenApi();
+
+        settings.MapPut(string.Empty,
+                async ([FromServices] SettingsApis apis, ServerSettingsInput input, HttpContext context) =>
+                await apis.UpdateAsync(input, context.RequestAborted))
+            .WithOpenApi();
+
         return app;
     }
 }

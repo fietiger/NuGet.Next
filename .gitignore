@@ -5,5 +5,7 @@ riderModule.iml
 /_ReSharper.Caches/
 /src/NuGet.Next/data
 /src/NuGet.Next/*.db
+/src/NuGet.Next/appsettings.Local.json
+/src/NuGet.Next/data/appsettings.Local.json
 /.vs
 /.idea

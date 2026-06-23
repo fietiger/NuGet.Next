@@ -17,6 +17,11 @@ public class NuGetNextOptions
     public bool AllowPackageOverwrites { get; set; } = false;
 
     /// <summary>
+    ///     如果启用，则允许匿名访问 NuGet 包下载服务。
+    /// </summary>
+    public bool PublicAccess { get; set; } = false;
+
+    /// <summary>
     ///     如果为true，则禁用包推送、删除和重新列出。
     /// </summary>
     public bool IsReadOnlyMode { get; set; } = false;

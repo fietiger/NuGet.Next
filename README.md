@@ -81,6 +81,7 @@ services:
       - Database:ConnectionString=Data Source=/app/data/nuget.db # 数据库连接字符串
       - Mirror:Enabled=true # 是否启用镜像源
       - Mirror:PackageSource=https://api.nuget.org/v3/index.json # 镜像源，如果本地没有会自动从镜像源拉取
+      - PublicAccess=false # 是否允许匿名下载 NuGet 包，后台系统设置保存后会写入 /app/data/appsettings.Local.json
       - RunMigrationsAtStartup:true # 是否在启动时运行迁移，如果是第一次启动请设置为true
 
 ```
@@ -206,13 +207,15 @@ docker-compose up -d
 
 - 默认用户名：admin
 - 默认密码：Aa123456.
-- 下载 `.nupkg` 需要提供 token。用户可在“Key管理”中创建 Key，浏览器下载会自动携带登录 token；NuGet 客户端可使用 Basic 凭证，把用户名设置为任意非空值、密码设置为用户 Key：
+- 默认下载 `.nupkg` 需要提供 token。用户可在“Key管理”中创建 Key，浏览器下载会自动携带登录 token；NuGet 客户端可使用 Basic 凭证，把用户名设置为任意非空值、密码设置为用户 Key：
 
 ```shell
 dotnet nuget add source http://localhost:5000/v3/index.json --name NuGetNext --username token --password <user-key> --store-password-in-clear-text
 ```
 
-- 管理员可在后台“操作记录”中查看下载审计，包括包、版本、用户、IP 和 token 类型。
+- 设置 `PublicAccess=true` 后，匿名客户端可以直接下载 `.nupkg`；匿名下载不会写入活动记录，通过 token 下载仍会记录审计。
+- 管理员也可以在后台“系统设置”中修改 Public Access。该设置会保存到 Storage 目录下的 `appsettings.Local.json`，Docker 默认映射 `./nuget:/app/data` 时，对应宿主机文件为 `./nuget/appsettings.Local.json`。
+- 管理员可在后台“操作记录”中查看通过 token 下载的审计，包括包、版本、用户、IP 和 token 类型。
 
 ## 发布到自己的 Docker Hub
 
