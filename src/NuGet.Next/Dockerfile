@@ -1,12 +1,16 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+ARG NODE_VERSION=24
+ARG PNPM_VERSION=10.33.3
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 USER root
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM node:24-bookworm-slim AS lobe
+FROM node:${NODE_VERSION}-bookworm-slim AS lobe
+ARG PNPM_VERSION
 WORKDIR /src
-RUN npm install -g pnpm@10.33.3
+RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
 COPY web/package.json web/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY web .
