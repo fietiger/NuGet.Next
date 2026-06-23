@@ -100,7 +100,6 @@ public class UserKeyApis(IContext context, IUserContext userContext) : IScopeDep
             where string.IsNullOrEmpty(keyword)
                   || key.Key.Contains(keyword)
                   || (user != null && (user.Username.Contains(keyword) || user.FullName.Contains(keyword)))
-            orderby key.CreatedTime descending
             select new UserKeyResponse
             {
                 Id = key.Id,
@@ -115,9 +114,13 @@ public class UserKeyApis(IContext context, IUserContext userContext) : IScopeDep
         var total = await query.CountAsync();
 
         var items = await query
+            .ToListAsync();
+
+        items = items
+            .OrderByDescending(x => x.CreatedTime)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToList();
 
         return new PageResponse<UserKeyResponse>(total, items);
     }

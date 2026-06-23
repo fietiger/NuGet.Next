@@ -80,9 +80,9 @@ const DesktopLayout = memo(() => {
                         label: '包管理',
                     },
                     {
-                        key: 'token-management',
+                        key: 'key-management',
                         icon: <KeyRound />,
-                        label: 'Token管理',
+                        label: '密钥管理',
                     },
                     {
                         key: 'common-history',
