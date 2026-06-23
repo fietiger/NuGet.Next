@@ -65,15 +65,16 @@ app.UseResponseCompression();
 
 app.UseStaticFiles();
 
-var info = new FileInfo(Path.Combine("wwwroot", "index.html"));
+var indexFile = Path.Combine("wwwroot", "index.html");
+var indexInfo = new FileInfo(indexFile);
 
 app.Use((async (context, next) =>
 {
     if (context.Request.Path == "/")
     {
-        if (info.Exists)
+        if (indexInfo.Exists)
         {
-            await context.Response.SendFileAsync(Path.Combine("wwwroot", "index.html"));
+            await context.Response.SendFileAsync(indexFile);
         }
 
         return;
@@ -81,14 +82,17 @@ app.Use((async (context, next) =>
 
     await next(context);
 
-    if (context.Response.StatusCode == 404 && context.Request.Path.StartsWithSegments("/v3") &&
-        context.Request.Path.StartsWithSegments("/api"))
+    if (!context.Response.HasStarted &&
+        context.Response.StatusCode == 404 &&
+        IsSpaFallbackRequest(context.Request))
     {
+        context.Response.Clear();
         context.Response.StatusCode = 200;
+        context.Response.ContentType = "text/html";
 
-        if (info.Exists)
+        if (indexInfo.Exists)
         {
-            await context.Response.SendFileAsync(Path.Combine("wwwroot", "index.html"));
+            await context.Response.SendFileAsync(indexFile);
         }
     }
 }));
@@ -104,3 +108,22 @@ app.UseEndpoints(endpoints =>
 app.MapApis();
 
 app.Run();
+
+static bool IsSpaFallbackRequest(HttpRequest request)
+{
+    if (!HttpMethods.IsGet(request.Method) && !HttpMethods.IsHead(request.Method))
+    {
+        return false;
+    }
+
+    var path = request.Path;
+    if (path.StartsWithSegments("/v3") ||
+        path.StartsWithSegments("/api") ||
+        path.StartsWithSegments("/swagger"))
+    {
+        return false;
+    }
+
+    return request.Headers.Accept.Any(accept =>
+        accept?.Contains("text/html", StringComparison.OrdinalIgnoreCase) == true);
+}
