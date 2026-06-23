@@ -4,7 +4,7 @@ import { Outlet } from "react-router-dom";
 import { Layout, Menu, theme } from 'antd';
 import './index.css'
 import { Header } from "@lobehub/ui";
-import { Package, User, Gauge, ChartCandlestick, Settings } from 'lucide-react'
+import { Package, User, Gauge, ChartCandlestick, Settings, KeyRound } from 'lucide-react'
 import { useNavigate, useLocation } from "react-router-dom";
 import React from "react";
 import Avatar from "./Avatar";
@@ -78,6 +78,11 @@ const DesktopLayout = memo(() => {
                         key: 'package-management',
                         icon: <Package />,
                         label: '包管理',
+                    },
+                    {
+                        key: 'token-management',
+                        icon: <KeyRound />,
+                        label: 'Token管理',
                     },
                     {
                         key: 'common-history',

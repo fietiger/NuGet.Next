@@ -182,6 +182,11 @@ public static class ApiExtensions
                 await apis.GetListAsync())
             .WithOpenApi();
 
+        userKey.MapGet("admin",
+                async ([FromServices] UserKeyApis apis, string? keyword, int page, int pageSize) =>
+                await apis.GetAdminListAsync(keyword, page, pageSize))
+            .WithOpenApi();
+
         userKey.MapDelete("{id}",
                 async ([FromServices] UserKeyApis apis, string id) =>
                 await apis.DeleteAsync(id))
@@ -200,6 +205,16 @@ public static class ApiExtensions
             .WithOpenApi();
 
         var settings = group.MapGroup("api/v3/settings");
+
+        group.MapGet("api/v3/nuget-config",
+                async ([FromServices] SettingsApis apis, HttpContext context) =>
+                await apis.DownloadNuGetConfigAsync(context))
+            .WithOpenApi();
+
+        settings.MapGet("public",
+                ([FromServices] SettingsApis apis) =>
+                apis.GetPublicAsync())
+            .WithOpenApi();
 
         settings.MapGet(string.Empty,
                 ([FromServices] SettingsApis apis) =>

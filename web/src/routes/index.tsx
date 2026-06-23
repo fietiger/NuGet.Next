@@ -11,6 +11,7 @@ import UserManagement from "@/admin/user-management";
 import AdminCommonHistory from "@/admin/common-history";
 import AdminSettings from "@/admin/settings";
 import PackageManagementPage from "@/admin/package-management";
+import TokenManagement from "@/admin/token-management";
 import KeyManager from "@/app/key-manager";
 import DocsPage from "@/app/docs";
 import AboutPage from "@/app/about";
@@ -90,6 +91,10 @@ const routes = [
             {
                 path: "/admin/package-management",
                 element: <PackageManagementPage />
+            },
+            {
+                path: "/admin/token-management",
+                element: <TokenManagement />
             }
         ]
     },

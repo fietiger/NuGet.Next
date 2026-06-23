@@ -1,6 +1,8 @@
-﻿using Gnarly.Data;
+using Gnarly.Data;
 using Microsoft.EntityFrameworkCore;
 using NuGet.Next.Core;
+using NuGet.Next.Core.Exceptions;
+using NuGet.Next.Core.Infrastructure;
 using NuGet.Next.Protocol.Models;
 
 namespace NuGet.Next.Service;
@@ -29,7 +31,7 @@ public class UserKeyApis(IContext context, IUserContext userContext) : IScopeDep
 
         await context.SaveChangesAsync(new CancellationToken());
 
-        return OkResponse.Ok("创建成功");
+        return OkResponse.Ok("创建成功，等待管理员启用");
     }
 
     /// <summary>
@@ -79,14 +81,56 @@ public class UserKeyApis(IContext context, IUserContext userContext) : IScopeDep
     }
 
     /// <summary>
-    /// 启用/禁用Key
+    /// 获取后台Key列表
+    /// </summary>
+    public async Task<PageResponse<UserKeyResponse>> GetAdminListAsync(string? keyword, int page, int pageSize)
+    {
+        if (userContext.Role != RoleConstant.Admin)
+        {
+            throw new ForbiddenException("无权限");
+        }
+
+        page = Math.Max(page, 1);
+        pageSize = Math.Min(pageSize, 1000);
+
+        var query = from key in context.UserKeys
+            join user in context.Users
+                on key.UserId equals user.Id into userGroup
+            from user in userGroup.DefaultIfEmpty()
+            where string.IsNullOrEmpty(keyword)
+                  || key.Key.Contains(keyword)
+                  || (user != null && (user.Username.Contains(keyword) || user.FullName.Contains(keyword)))
+            orderby key.CreatedTime descending
+            select new UserKeyResponse
+            {
+                Id = key.Id,
+                Key = key.Key,
+                CreatedTime = key.CreatedTime,
+                UserId = key.UserId,
+                Username = user == null ? string.Empty : user.Username,
+                FullName = user == null ? string.Empty : user.FullName,
+                Enabled = key.Enabled,
+            };
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PageResponse<UserKeyResponse>(total, items);
+    }
+
+    /// <summary>
+    /// 管理员启用/禁用Key
     /// </summary>
     /// <returns></returns>
     public async Task<OkResponse> EnableAsync(string id)
     {
-        if (!userContext.IsAuthenticated)
+        if (userContext.Role != RoleConstant.Admin)
         {
-            throw new UnauthorizedAccessException();
+            throw new ForbiddenException("无权限");
         }
 
         var key = await context.UserKeys.FirstOrDefaultAsync(x => x.Id == id);
@@ -95,12 +139,7 @@ public class UserKeyApis(IContext context, IUserContext userContext) : IScopeDep
             return new OkResponse(false, "Key不存在");
         }
 
-        if (key.UserId != userContext.UserId)
-        {
-            return new OkResponse(false, "无权操作");
-        }
-
-        await context.UserKeys.Where(x => x.UserId == userContext.UserId && x.Id == id)
+        await context.UserKeys.Where(x => x.Id == id)
             .ExecuteUpdateAsync(x => x.SetProperty(i => i.Enabled, a => !a.Enabled));
 
         return OkResponse.Ok("操作成功");

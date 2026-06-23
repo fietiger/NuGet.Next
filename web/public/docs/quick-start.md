@@ -30,10 +30,10 @@ docker-compose up -d
 
 ### 下载 token
 
-默认下载 `.nupkg` 需要提供 token。用户可在“Key管理”中创建 Key，NuGet 客户端可使用 Basic 凭证，把用户名设置为任意非空值、密码设置为用户 Key：
+默认下载 `.nupkg` 需要提供 token。用户可在“Key管理”中创建 Key，NuGet 客户端可使用 Basic 凭证，把用户名设置为实际登录用户名、密码设置为用户 Key：
 
 ```shell
-dotnet nuget add source http://localhost:5000/v3/index.json --name NuGetNext --username token --password <user-key> --store-password-in-clear-text
+dotnet nuget add source http://localhost:5000/v3/index.json --name NuGetNext --username <username> --password <user-key> --store-password-in-clear-text
 ```
 
 设置 `PublicAccess=true` 后，匿名客户端可以直接下载 `.nupkg`；匿名下载不会写入活动记录，通过 token 下载仍会记录审计。

@@ -1,7 +1,7 @@
 import { memo, useEffect, useState } from "react";
 import { Flexbox } from 'react-layout-kit';
-import { Button, Divider, message, Popconfirm, Table } from 'antd';
-import { CreateUserKey, DeleteUserKey, EnableUserKey, UserKeyList } from "@/services/UserKeyService";
+import { Button, Divider, message, Popconfirm, Table, Tag } from 'antd';
+import { CreateUserKey, DeleteUserKey, UserKeyList } from "@/services/UserKeyService";
 import { Snippet } from "@lobehub/ui";
 
 const KeyManager = memo(() => {
@@ -24,7 +24,7 @@ const KeyManager = memo(() => {
             dataIndex: 'enabled',
             key: 'enabled',
             render: (enabled: boolean) => {
-                return enabled ? '是' : '否';
+                return enabled ? <Tag color="green">已启用</Tag> : <Tag color="orange">待管理员启用</Tag>;
             }
         },
         {
@@ -32,15 +32,6 @@ const KeyManager = memo(() => {
             key: 'action',
             render: (_: any, record: any) => (
                 <Flexbox horizontal>
-                    <Button
-                        onClick={() => {
-                            enableKey(record.id);
-                        }}
-                        style={{
-                            marginRight: '10px'
-                        }}>
-                        {record.enabled ? '禁用' : '启用'}
-                    </Button>
                     <Popconfirm
                         title="确认删除?"
                         onConfirm={() => {
@@ -78,6 +69,7 @@ const KeyManager = memo(() => {
         try {
             const result = await CreateUserKey();
             if (result.success) {
+                message.success(result.message ?? '创建成功');
                 loadData();
             } else {
                 message.error(result.message);
@@ -90,19 +82,6 @@ const KeyManager = memo(() => {
     async function removeKey(key: string) {
         try {
             const result = await DeleteUserKey(key);
-            if (result.success) {
-                loadData();
-            } else {
-                message.error(result.message);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    async function enableKey(key: string) {
-        try {
-            const result = await EnableUserKey(key);
             if (result.success) {
                 loadData();
             } else {

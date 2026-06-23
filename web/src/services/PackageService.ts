@@ -33,9 +33,16 @@ export const DownloadPackageFile = async (url: string, fileName: string) => {
         const a = document.createElement('a');
         a.href = objectUrl;
         a.download = fileName;
+        a.style.display = 'none';
+
+        document.body.appendChild(a);
         a.click();
     } finally {
-        setTimeout(() => URL.revokeObjectURL(objectUrl));
+        setTimeout(() => {
+            const link = document.querySelector(`a[href="${objectUrl}"]`);
+            link?.parentElement?.removeChild(link);
+            URL.revokeObjectURL(objectUrl);
+        }, 1000);
     }
 }
 

@@ -35,7 +35,7 @@ public class UserKey
         Id = Guid.NewGuid().ToString("N");
         UserId = userId;
         CreatedTime = DateTimeOffset.Now;
-        Enabled = true;
+        Enabled = false;
         SetKey();
     }
 

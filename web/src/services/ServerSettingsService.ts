@@ -5,7 +5,15 @@ export interface ServerSettings {
     settingsFilePath?: string;
 }
 
+export interface PublicServerSettings {
+    publicAccess: boolean;
+}
+
 const prefix = '/api/v3/settings';
+
+export const getPublicServerSettings = () => {
+    return get(`${prefix}/public`);
+}
 
 export const getServerSettings = () => {
     return get(prefix);

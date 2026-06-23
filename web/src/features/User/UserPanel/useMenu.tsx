@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { message } from 'antd';
+import { useEffect, useState } from 'react';
 import type { MenuProps } from '@/components/Menu';
 import { DOCUMENTS, EMAIL_SUPPORT, GITHUB_ISSUES, mailTo } from '@/const/url';
 import { useQueryRoute } from '@/hooks/useQueryRoute';
@@ -19,11 +20,21 @@ import { useUserStore } from '@/store/user';
 import { authSelectors } from '@/store/user/selectors';
 import { useLocation } from 'react-router-dom';
 import { CreateUserKey, UserKeyList } from '@/services/UserKeyService';
+import { getPublicServerSettings } from '@/services/ServerSettingsService';
 
 type UserKeyItem = {
   key: string;
   enabled: boolean;
 };
+
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&apos;');
+}
 
 export const useMenu = () => {
   const router = useQueryRoute();
@@ -34,6 +45,18 @@ export const useMenu = () => {
     s.user,
   ]);
   const location = useLocation();
+  const [publicAccess, setPublicAccess] = useState(false);
+
+  useEffect(() => {
+    getPublicServerSettings()
+      .then((settings) => {
+        setPublicAccess(Boolean(settings?.publicAccess));
+      })
+      .catch((error) => {
+        console.error(error);
+        setPublicAccess(false);
+      });
+  }, []);
 
   async function getEnabledUserKey() {
     const keys = await UserKeyList() as UserKeyItem[];
@@ -50,7 +73,14 @@ export const useMenu = () => {
     }
 
     const refreshedKeys = await UserKeyList() as UserKeyItem[];
-    return refreshedKeys.find((item) => item.enabled)?.key ?? null;
+    const enabledKeyAfterCreate = refreshedKeys.find((item) => item.enabled)?.key;
+
+    if (!enabledKeyAfterCreate) {
+      message.warning(result.message ?? 'Key 已创建，请等待管理员启用');
+      return null;
+    }
+
+    return enabledKeyAfterCreate;
   }
 
   async function downloadNugetConfig() {
@@ -60,7 +90,7 @@ export const useMenu = () => {
       return;
     }
 
-    let userKey: string | null;
+    let userKey: string | null = null;
     try {
       userKey = await getEnabledUserKey();
     } catch (error) {
@@ -70,34 +100,47 @@ export const useMenu = () => {
     }
 
     if (!userKey) {
-      message.error('没有可用的 Key，请先在密钥管理中启用或创建 Key');
+      message.error('没有可用的 Key，请先在密钥管理中创建 Key，并等待管理员启用');
       return;
     }
 
-    const content = `<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <packageSources>
-    <add key="NuGetNext" value="{source}/v3/index.json" />
-  </packageSources>
+    const username = user?.username?.trim();
+    if (!username) {
+      message.error('无法获取当前用户名，请重新登录后再试');
+      return;
+    }
+
+    const source = `${window.location.origin}/v3/index.json`;
+    const credentials = `
   <packageSourceCredentials>
     <NuGetNext>
-      <add key="Username" value="token" />
-      <add key="ClearTextPassword" value="{user-key}" />
+      <add key="Username" value="${escapeXml(username)}" />
+      <add key="ClearTextPassword" value="${escapeXml(userKey)}" />
     </NuGetNext>
-  </packageSourceCredentials>
+  </packageSourceCredentials>`;
+
+    const config = `<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="NuGetNext" value="${escapeXml(source)}" />
+  </packageSources>${credentials}
 </configuration>
 `
-    const config = content
-      .replace('{source}', window.location.origin)
-      .replace('{user-key}', userKey);
 
     const blob = new Blob([config], { type: 'application/xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'NuGet.config';
+    a.style.display = 'none';
+
+    document.body.appendChild(a);
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url));
+
+    setTimeout(() => {
+      a.parentElement?.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 1000);
 
   }
 
@@ -198,7 +241,11 @@ export const useMenu = () => {
     {
       type: 'divider',
     },
-    ...(isLogin ? [{
+    ...(publicAccess ? [{
+      icon: <Icon icon={Download} />,
+      key: 'download-nuget-config',
+      label: <a href="/api/v3/nuget-config" download="NuGet.config">下载 NuGet.config</a>,
+    }] : isLogin ? [{
       icon: <Icon icon={Download} />,
       key: 'download-nuget-config',
       label: <span>下载 NuGet.config</span>,
